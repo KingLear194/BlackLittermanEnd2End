@@ -4,7 +4,8 @@
 
 [Full paper](https://drive.google.com/file/d/12QNfdyKZ6XfImnju3Cl6GI-zStrKlruh/view?usp=sharing)
 
-For a shorter project summary than the full paper go to ```summary.md```.
+For a shorter project summary than the full paper go to ```summary.md``` (to be added soon). Until then, look at this interesting paper that covers the traditional model and a wide range of extensions:
+[Kolm et al](https://www.pm-research.com/content/iijpormgmt/47/5/91). 
 
 ## Code organization 
 
