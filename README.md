@@ -26,7 +26,7 @@ To run an array of training jobs submit the script ```.src/SlurmScripts/etf_trai
 This loops over the jobs created by ```./src/etf_preprocessing.py```, $`L^1`$-regularization, $`L^2`$-regularization and learning rate for the global optimizer. 
 The training for a fixed combination of job and hyperparameters uses ```./src/one_shot_train.py```
 
-To fetch the validation results, find best model run the bash script ```.src/SlurmScripts/etf_ensembling.sh```
+To fetch the validation results, find the best model, produce ensembling and final results, run the bash script ```.src/SlurmScripts/etf_ensembling.sh```
 
     sbatch etf_ensembling.sh
 
