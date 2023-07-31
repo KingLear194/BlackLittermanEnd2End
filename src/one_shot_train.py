@@ -21,16 +21,7 @@ import argparse
 
 start_time = time.time()
 
-'''
-#######################################
-Read off from terminal of the node and prepare the arguments
-NOTE: here first need to run os_init_ddp.py on the terminal, then by hand pass the arguments when calling the file_exec.py 
-#######################################
-'''
 #### parse arguments from terminal
-'''
-Add flag to save predictions, add flag for job number which is consistent with flag you'll add to files produced from the preprocessing file (a version of ddp_train_val_prep.py)'
-'''
 parser = argparse.ArgumentParser(description  = 'Arguments for pytorch one-shot BLEndToEnd')
 
 parser.add_argument('-proj','--project_name', type = str, default = 'equity', help = 'Project name')
