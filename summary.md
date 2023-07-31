@@ -6,54 +6,55 @@
 We combine  with ML generated strategic views then optimize the portfolio allocation. The two parts of the model are jointly optimized based on mean-variance criterion.
 ## 2. Model
 Throughout we assume that the return follows normal distributions.
-$$
+```math
 r \sim \mathcal N(\mu, \Sigma)
-$$
+```
 
-To start with we compute a benchmark mean and covariance estimation $(\mu_b, \Sigma_b)$. In our case, this is estimated on a $K$-factor rolling PCA model. That is we use $\mathcal N (\mu_b, \Sigma_b)$ as our prior. Our BLEnd2End model has three distinct parts. 
+To start with we compute a benchmark mean and covariance estimation $`(\mu_b, \Sigma_b)`$. In our case, this is estimated on a $K$-factor rolling PCA model. That is we use $`\mathcal N (\mu_b, \Sigma_b)`$ as our prior. Our BLEnd2End model has three distinct parts. 
 
 ### 1. Strategic Views
 We generate portfolio weights based on observed signals $P$.  Then using FFN or RNN (to be selected in the validation phase) we forecast the mean return of the strategic views 
-$$
+```math
 \hat{q} = \texttt{ViewNet}(x)
-$$
+```
 
-The confidence $\Omega$ of view modeling is the view portfolio covariance scaled by $\tau_v$.
+The confidence $`\Omega`$ of view modeling is the view portfolio covariance scaled by $`\tau_v`$.
 
 ### 2. BL-Update
 
 - **BLEnd2End-Bayesian**, directly update use closed form solution
-  $$
+  ```math
       \mu_{BL-Bayes} = (P' \Omega^{-1} P' + C^{-1})^{-1}( P'\Omega^{-1}\hat q + \mu_b),\quad
       \Sigma_{BL-Bayes} = ( P'\Omega^{-1}P+C^{-1})^{-1}. 
-  $$
+  ```
 
-- **BLEnd2End-Solver**, projecting onto view space by minimizing probability distribution distance $D(\cdot \mid \cdot)$:
-  $$
+- **BLEnd2End-Solver**, projecting onto view space by minimizing probability distribution distance $`D(\cdot \mid \cdot)`$:
+  ```math
   (\mu_{BL}, \Sigma_{BL}) = \underset{P \mu = q,\, P'\Sigma P = }{\arg\min}\,D((\mu, \Sigma) \mid (\mu_b, \Sigma_b)).
-  $$
+  ```
   
-  $$
+  ```math
   (\mu_{BL}, \Sigma_{BL}) = \arg\min_{(\mu,B,d)}D\left((\mu,B\cdot B' + Diag(d\circ d))\mid(\mu_b,\Sigma_b)\right)+\lambda\lVert P\mu-\hat q\rVert^2.
-  $$
+  ```
   
 
 ### 3. Portfolio Allocation
 
 Portfolio allocation is modeled by FFN. The training criterion is either batch-data-loss, which is directly the mean-variance criterion:
-$$
+```math
 \ell_b (w ; \hat\mu_{t}, \hat\Sigma_{t}) = \sum_{t \in \mathcal B} w_t^T \hat\mu_{t} - \frac{\gamma^{ra}}{2} w^T \hat\Sigma_{t} w - \gamma^{tr} \|w_t - w_{t-1}\|_1
-$$
-or foc-loss, which reduces the input dimension by using the first-order condition (details see main paper) of the mean-variance criterion
-$$
-\ell_{foc}(\Delta; \hat\mu_t, \hat\Sigma_t) = \sum_{t\in \mathcal{B}}\lVert (\gamma^{ra}\hat\Sigma_t)\Delta_t+\gamma^{tr}sign(\Delta_t) -\left(\hat\mu_t-\hat\Sigma_t w_{-1}\right) \rVert^2,
-$$
+```
+or FOC-loss, which reduces the input dimension by using the first-order condition (details see main paper) of the mean-variance criterion
+```math
+\ell_{foc}(\Delta; \hat\mu_t, \hat\Sigma_t) = \sum_{t\in \mathcal{B}}\lVert (\gamma^{ra}\hat\Sigma_t)\Delta_t+\gamma^{tr}sign(\Delta_t) -\left(\hat\mu_t-\hat\Sigma_t w_{-1}\right) \rVert^2.
+```
 
 Following is an illustration of BLEnd2End-Bayesian implementation:
 
-![implementation](D:\Dropbox (Princeton)\BL_model\GitHub-Summary\BLEnd2End-joint.png)
+![BLEnd2End-joint](./BLEnd2End-joint.png)
 
-Following is an illustration of BLEnd2End-Solver implementation:![BLEnd2End-disjoint](D:\Dropbox (Princeton)\BL_model\GitHub-Summary\BLEnd2End-disjoint.png)
+Following is an illustration of BLEnd2End-Solver implementation:
+![BLEnd2End-disjoint](./BLEnd2End-disjoint.png)
 
 ## 3. Data
 
@@ -82,24 +83,24 @@ The time horizon of this study is from 2008-02 to 2021-01-01 and it uses monthly
 
    is selected from one of the following:
 
-  - **BLEnd2End-Bayesian** with view confidence scaler $\tau_v = 1/7$.
+  - **BLEnd2End-Bayesian** with view confidence scaler $`\tau_v = 1/7`$.
   - **BLEnd2End-Solver** We use Adam Optimizer with 40 iterations and learning rate 0.0001. The probability distribution distance measure is chosen out of WSD2, JSD and KL Divergence. We also use covariance factorization with 10 factors.
 
 - *WeightSolver*
 
    chooses a model out of the following
 
-  - **WeightsNet**: an FFN with hidden unit [128,64,64,32,32] that takes a flattened vector of $(\hat\mu_{BL}, \hat\Sigma_{BL}, w_{-1})$ with length $batchsize \times (n + 2)$ ($n=14$ in this case) where $w_{-1}$ is the current portfolio weights. The activation function is SiLU and the dropout rate is 0.05;
-  - **WeightsDiffNet**: an FFN with hidden unit [128,64,64,32,32] that takes a flattened vector of $(\hat\Sigma_{BL}, \hat\mu_{BL} - \hat{\Sigma}_t\,  w_{-1})$ of length $batchsize \times (n + 1)$. The activation function is SiLU and the dropout rate is 0.05.
+  - **WeightsNet**: an FFN with hidden unit [128,64,64,32,32] that takes a flattened vector of $`(\hat\mu_{BL}, \hat\Sigma_{BL}, w_{-1})`$ with length $`batchsize \times (n + 2)`$ ($`n=14`$ in this case) where $`w_{-1}`$ is the current portfolio weights. The activation function is SiLU and the dropout rate is 0.05;
+  - **WeightsDiffNet**: an FFN with hidden unit [128,64,64,32,32] that takes a flattened vector of $`(\hat\Sigma_{BL}, \hat\mu_{BL} - \hat{\Sigma}_t\,  w_{-1})`$ of length $`batchsize \times (n + 1)`$. The activation function is SiLU and the dropout rate is 0.05.
   - **WeightSolver** uses Adam as an optimizer with a learning rate of 0.0001 and 40 iterations to minimize the train criterion directly.
 
-  The output weights from any of the above models are normalized with bound 0.5 on $\ell_2$-norm.
+  The output weights from any of the above models are normalized with bound 0.5 on $`\ell_2`$-norm.
 
 For each of the models proposed by taking a combination of the above architecture, we select a hyperparameter from the following:
 
 - **Learning Rate of Global Optimization**: 0.001 or 0.0001;
-- **$\ell_1$-regularization of global training criteria** is selected from 0, 0.01 or 0.1;
-- **$\ell_2$-regularization for global training criteria** is also selected from 0, 0.01, or 0.1.
+- **$`\ell_1`$-regularization of global training criteria** is selected from 0, 0.01 or 0.1;
+- **$`\ell_2`$-regularization for global training criteria** is also selected from 0, 0.01, or 0.1.
 
 ## 5. Results
 

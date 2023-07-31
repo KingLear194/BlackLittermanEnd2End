@@ -2,7 +2,7 @@
 
 *Jetlir Duraj, Chenyu Yu*
 
-[Full paper]()
+[Full paper](https://drive.google.com/file/d/12QNfdyKZ6XfImnju3Cl6GI-zStrKlruh/view?usp=sharing)
 
 For a shorter project summary than the full paper go to ```summary.md```.
 
