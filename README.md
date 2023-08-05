@@ -4,8 +4,7 @@
 
 [Full paper](https://drive.google.com/file/d/12QNfdyKZ6XfImnju3Cl6GI-zStrKlruh/view?usp=sharing)
 
-For a shorter project summary than the full paper go to ```summary.md``` (to be added soon). Until then, look at this interesting paper that covers the traditional model and a wide range of extensions:
-[Kolm et al](https://www.pm-research.com/content/iijpormgmt/47/5/91). 
+For a shorter project summary than the full paper go to ```summary.md``` .
 
 ## Code organization 
 
@@ -26,7 +25,7 @@ To run an array of training jobs submit the script ```src/SlurmScripts/etf_train
 This loops over the jobs created by ```src/etf_preprocessing.py```, $`L^1`$-regularization, $`L^2`$-regularization and learning rate for the global optimizer. 
 The training for a fixed combination of job and hyperparameters uses ```src/one_shot_train.py```
 
-To fetch the validation results, find the best model, produce ensembling and final results, run the bash script ```src/SlurmScripts/etf_ensembling.sh```
+To fetch the validation results, then find the best model, then produce ensembling and save final results, run the bash script ```src/SlurmScripts/etf_ensembling.sh```
 
     sbatch etf_ensembling.sh
 
