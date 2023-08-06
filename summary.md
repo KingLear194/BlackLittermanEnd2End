@@ -17,13 +17,13 @@ where the $`\mu`$ and $`\Sigma`$ are the mean and covariance of the distribution
 ```math
 \mu(\theta) \sim \mathcal N (\mu_b, C_b).
 ```
-$`(\mu_b, \Sigma_b)`$ is the mean and covariance of the benchmark portfolio return. And $`C_b`$ is investor's confidence in benchmark. Typically, $`C_b`$ is modeled as a scaling of an estimate of the covariance matrix, e.g. the usual sample covariance estimator, e.g. the investor can choose $`C_b = \tau_b \Sigma_b`$ scaled by $`\tau_b > 0`$, where $`\Sigma_b`$ is the sample covariance. 
+$`(\mu_b, \Sigma_b)`$ is the mean and covariance of the benchmark portfolio return. $`C_b`$ is investor's confidence in benchmark. Typically, $`C_b`$ is modeled as a scaling of an estimate of the covariance matrix, e.g. the usual sample covariance estimator. E.g. the investor can choose $`C_b = \tau_b \Sigma_b`$ scaled by $`\tau_b > 0`$, where $`\Sigma_b`$ is the sample covariance. 
 
-Now, suppose the investor has some views about the market. These views can always be phrased as $`P \mu(\theta) = q`$, which is to say that the expected return of a certain portfolio $`P ` \in \mathbb R^{V\times n}$ (V is the number of views and n is the number of assets being traded) of assets will be $`q`$. And the investor can attach certain confidence to their view by letting $`P \mu(\theta) `$ be a random vector:
+Now, suppose the investor has some views about the market. These views can always be phrased as $`P \mu(\theta) = q`$, which is to say that the expected return of a certain portfolio $`P \in \mathbb R^{V\times n}`$ ($`V`$ is the number of views and $`n`$ is the number of assets being traded) of assets will be $`q`$. And the investor can attach certain confidence to their view by letting $`P \mu(\theta)`$ be a random vector:
 ```math
 P \mu(\theta) \sim \mathcal N(q, \Omega),
 ```
-where $`\Omega`$ is the view confidence matrix. In the traditional model the views are also normal distributed.
+where $`\Omega`$ is the view confidence matrix. In the traditional model the views are also normal distributed, just as the benchmark.
 
 Then one can update the prior with the views using Bayes rules to obtain a posterior distribution $`r\mid  q \sim \mathcal N(\mu_{BL}, \Sigma_{BL})`$. With the normal distribution assumption there are closed formulas for $`(\mu_{BL}, \Sigma_{BL})`$.
 ```math
@@ -45,14 +45,14 @@ Our work is inspired by the Bayesian BL approach. We propose the BLEnd2End model
 
 For our empirical application below, we use a factor model based on rolling Principal Component Analysis (PCA) to produce the benchmark $`(\mu_b, \Sigma_b)`$. 
 
-### 1. Objective views are market-wide strategies learned through machine learning
+### 2. Objective views are market-wide strategies learned through machine learning
 We generate views based on observed features `x` appropriate for the asset universe. 
 ```math
 {q} = \texttt{ViewNet}(x)
 ```
 The confidence $`\Omega`$ of view modeling is the view portfolio covariance scaled by $`\tau_v`$. This choice is justified since our views are objectively generated.
 
-### 2. BL-update
+### 3. BL-update
 One caveat of the Bayes BL-update is the assumption that $`\Sigma_b`$ is always invertible. However, this is not always the case in a high-dimensional dataset. Hence there are two ways to perform BL-update, if keeping the normal distribution assumption:
 
 - **Bayesian update**: whenever possible, directly update using closed form solutions above (Bayes BL update).
@@ -65,24 +65,24 @@ In our work, the probability distance measure can be chosen from the Wasserstein
 Our implementation incorporates the constraint that the views are satisfied through a Lagrangian penalty, with a *large* Lagrangian parameter:
 
 ```math
-(\mu_{BL}, \Sigma_{BL}) = \arg\min_{(\mu,B,d)}Dist\left((\mu,B\cdot B' + Diag(d\circ d))\mid(\mu_b,\Sigma_b)\right)+\lambda\lVert P\mu-\hat q\rVert^2,
+(\mu_{BL}, \Sigma_{BL}) = \arg\min_{(\mu,B,d)}Dist\left((\mu,B\cdot B' + Diag(d\circ d))\mid(\mu_b,\Sigma_b)\right)+\lambda\lVert P\mu- q\rVert^2,
 ```
 where $`\lambda`$ is a large number that penalizes violation of the views.
 
-### 3. Portfolio Allocation
+### 4. Portfolio Allocation
 
 #### Objective function for portfolio allocation 
 
-For a batch $`\mathcal B`$ with potentially multiple dates present, and expected returns and covariance estimates $`(\hat\mu_{t}, \hat\Sigma_{t})`$, the portfolio allocation can be determined by solving an optimization problem where the loss function can be one of two possibilities. First choice we try is *Batch-mean-variance*, which is directly maximizing the mean-variance criterion:
+For a batch $`\mathcal B`$ with potentially multiple dates present, and expected returns and covariance estimates $`(\hat\mu_{t}, \hat\Sigma_{t})_{t\in \mathcal{B}}`$, the portfolio allocation can be determined by solving an optimization problem where the loss function can be one of two possibilities. First choice we try is *Batch-mean-variance*, which is directly maximizing the mean-variance criterion:
 
 ```math
-(\textrm{Batch-data-loss})\quad\quad\ell_b (w ; \hat\mu_{t}, \hat\Sigma_{t}) = \sum_{t \in \mathcal B} w_t^T \hat\mu_{t} - \frac{\gamma^{ra}}{2} w^T \hat\Sigma_{t} w - \gamma^{tr} \|w_t - w_{t-1}\|_1
+(\textrm{Batch-mean-variance})\quad\quad\ell_b (w ; \hat\mu_{t}, \hat\Sigma_{t}) = \sum_{t \in \mathcal B} w_t^T \hat\mu_{t} - \frac{\gamma^{ra}}{2} w^T \hat\Sigma_{t} w - \gamma^{tr} \|w_t - w_{t-1}\|_1
 ```
-Second, we try minimizing *FOC-loss*, which reduces the input dimension by using the first-order condition (detailed derivation see full paper) of the mean-variance criterion:
+Second, we try minimizing *FOC-deviation*, which reduces the input dimension by using the first-order condition of the mean-variance criterion (detailed derivation see full paper). This second choice is viable, because the objective function for portfolio optimization (*Batch-mean-variance*) is convex. It leads to minimizing the following loss:
 ```math
 (\textrm{FOC-loss})\quad\quad \ell_{foc}(\Delta; \hat\mu_t, \hat\Sigma_t) = \sum_{t\in \mathcal{B}}\lVert (\gamma^{ra}\hat\Sigma_t)\Delta_t+\gamma^{tr}sign(\Delta_t) -\left(\hat\mu_t-\hat\Sigma_t w_{-1}\right) \rVert^2.
 ```
-Note that this second choice is viable, because the objective function is convex. 
+
 
 #### Determining the portfolio allocation given an objective function
 
@@ -92,7 +92,7 @@ We follow two distinct approaches here, which we then compare in terms of result
 ```math
 w = \texttt{FFN}(\mu_{BL}, {\Sigma}_{BL},w_{-1}).
 ```
-Technically, there is a global Adam optimizer that updates the weights of **both** $`\texttt{Viewnet}`$ and of the $`\texttt{FFN}`$ modeling the weights at the same time. We follow certain additional implementation details in defining the $`\texttt{FFN}`$ to increase performance. These are explained in the paper -- look for $`\texttt{WeightNet}`$ and $`\texttt{WeightDiffNet}`$ there.
+Technically, there is a global Adam optimizer that updates the weights of **both** $`\texttt{Viewnet}`$ and of the $`\texttt{FFN}`$ modeling the weights at the same time. We follow certain additional implementation details in defining the $`\texttt{FFN}`$ for weights to increase performance. These are explained in the paper -- look for $`\texttt{WeightNet}`$ and $`\texttt{WeightDiffNet}`$ there.
 
 
 - In the **disjoint optimization approach** the weights are optimized using a solver. The solver takes as parameters the same ones as in the joint approach $`(\mu_{BL}, {\Sigma}_{BL},w_{-1})`$,
@@ -106,7 +106,7 @@ The following image is an illustration of BLEnd2End for both approaches. On the 
 ![BLEnd2End implementations](./joint_and_disjoint_end2end_approaches.png)
 
 In the joint optimization approach, there is a single model that covers **both** view generation and portfolio allocation and that is optimized by one global optimizer.
-In the disjoint optimization approach, there is a trainable model that covers view generation, whereas the portfolio weights are solved through a separate solver. Moreover, we also allow for the BL update to be solved using the **distance solvers** above, instead of the Bayes' rule. 
+In the disjoint optimization approach, there is a trainable model that covers view generation, whereas the portfolio weights are solved through a separate solver. Moreover, we also allow for the BL update to be solved using the **distance solvers** above, as an alternative to the **Bayes' rule**. 
 
 ## 3. Dataset for empirical implementation
 Our asset universe contains 14 ETFs: BIL, IEF, SHY, TLT, SPY, XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY. downloaded from [WRDS TAQ database](https://wrds-www.wharton.upenn.edu/pages/get-data/nyse-trade-and-quote/). Our input features  `x` for the $`\texttt{ViewNet}`$ are macroeconomic time-series from [FRED](https://fred.stlouisfed.org/). 
@@ -184,7 +184,7 @@ BLEnd2End achieves a much higher risk-adjusted return than the no-BL-update mean
 
 #### Test phase BLEnd2End and other ETF strategies comparison
 
-The BLEnd2End portfolio demonstrates great ability in drawdown control by achieving monthly Sortino ratio of 38.685, outperforming all the other common ETF strategies like risk parity, 60%-stocks-40%-bonds fix-mix and equal weights portfolio. 
+The BLEnd2End portfolio demonstrates great ability in drawdown control by achieving monthly Sortino ratio of about 39, outperforming some other common ETF strategies like risk parity, 60%-stocks-40%-bonds fix-mix and equal weights portfolio. 
 
 |               | sharpe | sortino | calmar | mdd   |
 | ------------- | ------ | ------- | ------ | ----- |
